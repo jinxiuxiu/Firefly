@@ -4,26 +4,51 @@
 # 使用方法：
 #   1. 本文件放在仓库根目录。注意文件名必须是带点的 .pages.yml，
 #      Pages CMS 只读取这个名字（仓库里再放一个不带点的 pages.yml 不会生效）。
-#   2. 打开 https://app.pagescms.org ，用 GitHub 账号登录。
-#   3. 安装 Pages CMS 的 GitHub App，并选中本博客所在的仓库。
-#   4. 之后就能在网页上编辑文章 / 动态 / 项目 / 页面，保存时自动提交到 GitHub。
+#   2. 把仓库推送到 GitHub 的 master 分支。
+#   3. 打开 https://app.pagescms.org ，用 GitHub 账号登录。
+#   4. 安装 Pages CMS 的 GitHub App，并选中本博客所在的仓库。
+#   5. 之后就能在网页上编辑文章 / 动态 / 项目 / 页面，保存时自动提交到
+#      GitHub 并触发重新部署。
 #
 # 关于密码：登录鉴权完全由 GitHub 负责（拥有仓库写权限的人才能进后台），
 # Pages CMS 没有独立的密码登录功能，前台也无法用密码来保护后台。
 # ============================================================================
 
-# 图片上传位置：上传的图片存到 input 指定的仓库目录，并把 output 路径写进 frontmatter
+# 图片上传：每个内容区域一个媒体源，上传的图片存到 input 目录，
+# 并把 output 形式的相对路径写进 frontmatter / 正文，与主题现有图片引用习惯一致。
+# rename 不设置 = 保留上传时的原始文件名（safe 模式会破坏中文文件名）。
 media:
   - name: posts-images
     label: 文章图片
     input: src/content/posts/images
     output: ./images
-    rename: safe
+  - name: dynamic-images
+    label: 动态图片
+    input: src/content/dynamic/images
+    output: ./images
   - name: projects-images
     label: 项目图片
     input: src/content/projects/images
     output: images
-    rename: safe
+  - name: spec-images
+    label: 页面图片
+    input: src/content/spec/images
+    output: ./images
+
+settings:
+  # 保存时采用合并模式：后台配置里没定义的字段（比如主题内部字段）原样保留，
+  # 不会被删掉。这是对旧文章的重要保护，请勿改为 false。
+  content:
+    merge: true
+  # 隐藏后台的 Settings 页面，防止在网页上误改本配置文件
+  hide: true
+  # 提交信息模板（跟随仓库的 Conventional Commits 风格）
+  commit:
+    templates:
+      create: "content(create): {path}"
+      update: "content(update): {path}"
+      delete: "content(delete): {path}"
+      rename: "content(rename): {oldPath} -> {newPath}"
 
 content:
   # ── 文章 ──────────────────────────────────────────────────────────────────
@@ -33,11 +58,13 @@ content:
     path: src/content/posts
     format: yaml-frontmatter
     subfolders: true
+    # .mdx 文件含组件语法，富文本编辑器保存时会写坏它，直接在后台隐藏
+    exclude: ["*.mdx"]
     filename:
       template: "{primary}.md"
       field: create
     view:
-      fields: [title, published, category, draft]
+      fields: [title, published, category, pinned, draft]
       primary: title
       sort: [published, title]
       default:
@@ -48,6 +75,10 @@ content:
         label: 标题
         type: string
         required: true
+      - name: slug
+        label: URL 别名
+        type: string
+        description: 自定义文章网址。已有文章请勿随意修改，会影响外链收录。
       - name: published
         label: 发布日期
         type: date
@@ -120,6 +151,10 @@ content:
       - name: body
         label: 正文
         type: rich-text
+        description: 提示：文章里有 GitHub 卡片、Wiki 链接等特殊语法时，请切换到 Source 源码模式编辑，避免格式被改写。
+        options:
+          media: posts-images
+          switcher: true
 
   # ── 动态 ──────────────────────────────────────────────────────────────────
   - name: dynamic
@@ -155,6 +190,9 @@ content:
       - name: body
         label: 内容
         type: rich-text
+        options:
+          media: dynamic-images
+          switcher: true
 
   # ── 项目 ──────────────────────────────────────────────────────────────────
   - name: projects
@@ -178,6 +216,10 @@ content:
         label: 项目名称
         type: string
         required: true
+      - name: slug
+        label: URL 别名
+        type: string
+        description: 自定义项目网址。已有项目请勿随意修改，会影响外链收录。
       - name: published
         label: 发布日期
         type: date
@@ -232,6 +274,9 @@ content:
       - name: body
         label: 正文
         type: rich-text
+        options:
+          media: projects-images
+          switcher: true
 
   # ── 页面（关于我 / 留言板 / 友情链接）────────────────────────────────────
   - name: spec
@@ -244,16 +289,12 @@ content:
         path: src/content/spec/about.md
         format: yaml-frontmatter
         fields:
-          # title / description 当前站点未渲染，保留字段只为编辑时不丢失原有 frontmatter
-          - name: title
-            label: 标题（预留）
-            type: string
-          - name: description
-            label: 描述（预留）
-            type: string
           - name: body
             label: 内容
             type: rich-text
+            options:
+              media: spec-images
+              switcher: true
       - name: guestbook
         label: 留言板
         type: file
@@ -261,14 +302,17 @@ content:
         format: yaml-frontmatter
         fields:
           - name: title
-            label: 标题（预留）
+            label: 标题
             type: string
           - name: description
-            label: 描述（预留）
+            label: 描述
             type: string
           - name: body
             label: 内容
             type: rich-text
+            options:
+              media: spec-images
+              switcher: true
       # 该页面含 JSX 组件，用源码模式编辑，避免富文本编辑器破坏原有结构
       - name: friends
         label: 友情链接（MDX 源码）
