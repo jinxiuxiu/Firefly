@@ -124,6 +124,14 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
+	// 后台管理入口（Pages CMS，使用 GitHub 账号登录）
+	links.push({
+		name: "后台",
+		url: "https://app.pagescms.org/",
+		external: true,
+		icon: "material-symbols:admin-panel-settings",
+	});
+
 	// 文档链接
 	// links.push({
 	// 	name: "文档",

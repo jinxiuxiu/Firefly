@@ -1,0 +1,277 @@
+# ============================================================================
+# Pages CMS 配置 —— https://pagescms.org
+# ----------------------------------------------------------------------------
+# 使用方法：
+#   1. 本文件放在仓库根目录。注意文件名必须是带点的 .pages.yml，
+#      Pages CMS 只读取这个名字（仓库里再放一个不带点的 pages.yml 不会生效）。
+#   2. 打开 https://app.pagescms.org ，用 GitHub 账号登录。
+#   3. 安装 Pages CMS 的 GitHub App，并选中本博客所在的仓库。
+#   4. 之后就能在网页上编辑文章 / 动态 / 项目 / 页面，保存时自动提交到 GitHub。
+#
+# 关于密码：登录鉴权完全由 GitHub 负责（拥有仓库写权限的人才能进后台），
+# Pages CMS 没有独立的密码登录功能，前台也无法用密码来保护后台。
+# ============================================================================
+
+# 图片上传位置：上传的图片存到 input 指定的仓库目录，并把 output 路径写进 frontmatter
+media:
+  - name: posts-images
+    label: 文章图片
+    input: src/content/posts/images
+    output: ./images
+    rename: safe
+  - name: projects-images
+    label: 项目图片
+    input: src/content/projects/images
+    output: images
+    rename: safe
+
+content:
+  # ── 文章 ──────────────────────────────────────────────────────────────────
+  - name: posts
+    label: 文章
+    type: collection
+    path: src/content/posts
+    format: yaml-frontmatter
+    subfolders: true
+    filename:
+      template: "{primary}.md"
+      field: create
+    view:
+      fields: [title, published, category, draft]
+      primary: title
+      sort: [published, title]
+      default:
+        sort: published
+        order: desc
+    fields:
+      - name: title
+        label: 标题
+        type: string
+        required: true
+      - name: published
+        label: 发布日期
+        type: date
+        required: true
+        options:
+          format: yyyy-MM-dd
+      - name: updated
+        label: 更新日期
+        type: date
+        # 默认空值，避免编辑旧文章时被自动填上当天日期
+        default: ""
+        options:
+          format: yyyy-MM-dd
+      - name: draft
+        label: 草稿
+        type: boolean
+        default: false
+      - name: pinned
+        label: 置顶
+        type: boolean
+        default: false
+      - name: description
+        label: 摘要
+        type: text
+      - name: image
+        label: 封面图
+        type: image
+        options:
+          media: posts-images
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+      - name: category
+        label: 分类
+        type: string
+      - name: lang
+        label: 语言
+        type: string
+        description: 留空使用站点默认语言，可选 zh_CN / zh_TW / en / ja / ru / ko
+      - name: author
+        label: 作者
+        type: string
+      - name: sourceLink
+        label: 原文链接
+        type: string
+      - name: licenseName
+        label: 许可协议名称
+        type: string
+      - name: licenseUrl
+        label: 许可协议链接
+        type: string
+      - name: comment
+        label: 允许评论
+        type: boolean
+        default: true
+      - name: password
+        label: 文章密码
+        type: string
+        description: 填写后访客需输入密码才能查看正文
+      - name: passwordHint
+        label: 密码提示
+        type: string
+      - name: series
+        label: 所属系列
+        type: string
+      - name: seriesOrder
+        label: 系列内排序
+        type: number
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ── 动态 ──────────────────────────────────────────────────────────────────
+  - name: dynamic
+    label: 动态
+    type: collection
+    path: src/content/dynamic
+    format: yaml-frontmatter
+    filename:
+      template: "{year}-{month}-{day}-{hour}{minute}{second}.md"
+      field: create
+    view:
+      fields: [published, pinned, location]
+      primary: published
+      sort: [published]
+      default:
+        sort: published
+        order: desc
+    fields:
+      - name: published
+        label: 发布时间
+        type: date
+        required: true
+        options:
+          time: true
+          format: "yyyy-MM-dd HH:mm:ss"
+      - name: pinned
+        label: 置顶
+        type: boolean
+        default: false
+      - name: location
+        label: 位置
+        type: string
+      - name: body
+        label: 内容
+        type: rich-text
+
+  # ── 项目 ──────────────────────────────────────────────────────────────────
+  - name: projects
+    label: 项目
+    type: collection
+    path: src/content/projects
+    format: yaml-frontmatter
+    subfolders: true
+    filename:
+      template: "{primary}.md"
+      field: create
+    view:
+      fields: [title, published, status, draft]
+      primary: title
+      sort: [order, published]
+      default:
+        sort: order
+        order: desc
+    fields:
+      - name: title
+        label: 项目名称
+        type: string
+        required: true
+      - name: published
+        label: 发布日期
+        type: date
+        required: true
+        options:
+          format: yyyy-MM-dd
+      - name: draft
+        label: 草稿
+        type: boolean
+        default: false
+      - name: order
+        label: 排序权重
+        type: number
+        description: 数值越大越靠前
+      - name: description
+        label: 简介
+        type: text
+      - name: image
+        label: 封面图
+        type: image
+        options:
+          media: projects-images
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+      - name: status
+        label: 状态
+        type: string
+        description: 例如 published / developing / archived
+      - name: lang
+        label: 语言
+        type: string
+      - name: link
+        label: 相关链接
+        type: object
+        list:
+          collapsible:
+            collapsed: true
+            summary: "{label}"
+        fields:
+          - name: label
+            label: 名称
+            type: string
+          - name: icon
+            label: 图标
+            type: string
+            description: Iconify 图标名，例如 fa7-brands:github
+          - name: value
+            label: 链接
+            type: string
+      - name: body
+        label: 正文
+        type: rich-text
+
+  # ── 页面（关于我 / 留言板 / 友情链接）────────────────────────────────────
+  - name: spec
+    label: 页面
+    type: group
+    items:
+      - name: about
+        label: 关于我
+        type: file
+        path: src/content/spec/about.md
+        format: yaml-frontmatter
+        fields:
+          # title / description 当前站点未渲染，保留字段只为编辑时不丢失原有 frontmatter
+          - name: title
+            label: 标题（预留）
+            type: string
+          - name: description
+            label: 描述（预留）
+            type: string
+          - name: body
+            label: 内容
+            type: rich-text
+      - name: guestbook
+        label: 留言板
+        type: file
+        path: src/content/spec/guestbook.md
+        format: yaml-frontmatter
+        fields:
+          - name: title
+            label: 标题（预留）
+            type: string
+          - name: description
+            label: 描述（预留）
+            type: string
+          - name: body
+            label: 内容
+            type: rich-text
+      # 该页面含 JSX 组件，用源码模式编辑，避免富文本编辑器破坏原有结构
+      - name: friends
+        label: 友情链接（MDX 源码）
+        type: file
+        path: src/content/spec/friends.mdx
+        format: code
